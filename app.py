@@ -31,6 +31,10 @@ def home():
 def predict_all():
     try:
         data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "No data posted. Please provide JSON payload."}), 400
+            
         required = ['ds', 'rainfall', 'tmax', 'tmin', 'tmean', 'rh']
         for field in required:
             if field not in data:
