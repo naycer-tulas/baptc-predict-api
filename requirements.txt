@@ -4,3 +4,4 @@ pandas==1.5.3
 joblib==1.2.0
 prophet==1.1.5
 --find-links https://pypi.anaconda.org/conda-forge/simple
+gunicorn==20.1.0
