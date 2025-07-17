@@ -25,7 +25,7 @@ for name, filename in model_files.items():
 
 @app.route('/')
 def home():
-    return "✅ BAPTC Prophet API is running!"
+    return "Great success. BAPTC Prophet API is working."
 
 @app.route('/baptc-models/predict', methods=['POST'])
 def predict_all():
