@@ -1,20 +1,27 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import joblib
+from prophet.serialize import model_from_json
 import pandas as pd
 import os
+import json
 
 app = Flask(__name__)
 CORS(app)
 
-# Load models
+# Load models from JSON
 model_dir = "models"
-models = {
-    "cabbage_scorpio_low": joblib.load(os.path.join(model_dir, "cabbage_scorpio_low.pkl")),
-    "cabbage_scorpio_high": joblib.load(os.path.join(model_dir, "cabbage_scorpio_high.pkl")),
-    "potato_granula_low": joblib.load(os.path.join(model_dir, "potato_granula_low.pkl")),
-    "potato_granula_high": joblib.load(os.path.join(model_dir, "potato_granula_high.pkl")),
+models = {}
+
+model_files = {
+    "cabbage_scorpio_low": "cabbage_scorpio_low.json",
+    "cabbage_scorpio_high": "cabbage_scorpio_high.json",
+    "potato_granula_low": "potato_granula_low.json",
+    "potato_granula_high": "potato_granula_high.json",
 }
+
+for name, filename in model_files.items():
+    with open(os.path.join(model_dir, filename), "r") as fin:
+        models[name] = model_from_json(fin.read())  # No need to parse with json.load
 
 @app.route('/')
 def home():
