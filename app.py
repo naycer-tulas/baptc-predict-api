@@ -8,7 +8,7 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# Load models from JSON
+# === Load Prophet Models ===
 model_dir = "models"
 models = {}
 
@@ -21,12 +21,13 @@ model_files = {
 
 for name, filename in model_files.items():
     with open(os.path.join(model_dir, filename), "r") as fin:
-        models[name] = model_from_json(fin.read())  # No need to parse with json.load
+        models[name] = model_from_json(fin.read())
 
 @app.route('/')
 def home():
     return "Great success. BAPTC Prophet API is working."
 
+# === Predict for multiple days (e.g., 14-day forecast) ===
 @app.route('/baptc-models/predict', methods=['POST'])
 def predict_all():
     try:
@@ -34,30 +35,39 @@ def predict_all():
 
         if not data:
             return jsonify({"error": "No data posted. Please provide JSON payload."}), 400
-            
+
+        # Expect a list of daily entries (14 days)
+        if not isinstance(data, list):
+            return jsonify({"error": "Input must be a list of daily weather data."}), 400
+
         required = ['ds', 'rainfall', 'tmax', 'tmin', 'tmean', 'rh']
-        for field in required:
-            if field not in data:
-                return jsonify({"error": f"Missing field: {field}"}), 400
+        for day in data:
+            for field in required:
+                if field not in day:
+                    return jsonify({"error": f"Missing field '{field}' in one of the entries."}), 400
 
-        future_df = pd.DataFrame([{
-            "ds": pd.to_datetime(data["ds"]),
-            "rainfall": data["rainfall"],
-            "tmax": data["tmax"],
-            "tmin": data["tmin"],
-            "tmean": data["tmean"],
-            "rh": data["rh"]
-        }])
+        # Convert to DataFrame
+        future_df = pd.DataFrame(data)
+        future_df["ds"] = pd.to_datetime(future_df["ds"])
 
-        results = {}
+        # Prepare a base result DataFrame with date column
+        combined_df = pd.DataFrame({"ds": future_df["ds"]})
+
+        # Predict for each model and merge results
         for name, model in models.items():
             forecast = model.predict(future_df)
-            results[name] = round(forecast['yhat'].iloc[0], 2)
+            forecast = forecast[["ds", "yhat"]].rename(columns={"yhat": name})
+            forecast[name] = forecast[name].round(2)
+            combined_df = combined_df.merge(forecast, on="ds", how="left")
 
-        return jsonify(results)
+        # Convert datetime to string for JSON output
+        combined_df["ds"] = combined_df["ds"].dt.strftime("%Y-%m-%d")
+
+        return jsonify(combined_df.to_dict(orient="records"))
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
