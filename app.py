@@ -13,10 +13,10 @@ model_dir = "models"
 models = {}
 
 model_files = {
-    "cabbage_scorpio_low": "cabbage_scorpio_low.json",
-    "cabbage_scorpio_high": "cabbage_scorpio_high.json",
     "potato_granula_low": "potato_granula_low.json",
     "potato_granula_high": "potato_granula_high.json",
+    "potato_lbr_low": "potato_lbr_low.json",
+    "potato_lbr_high": "potato_lbr_high.json",
 }
 
 for name, filename in model_files.items():
